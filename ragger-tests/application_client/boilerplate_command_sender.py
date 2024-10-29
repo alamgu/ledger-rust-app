@@ -3,7 +3,7 @@ from typing import Generator, List, Optional
 from contextlib import contextmanager
 
 from ragger.backend.interface import BackendInterface, RAPDU
-from ragger.bip import pack_derivation_path
+from bip_utils import Bip32Utils
 
 
 MAX_APDU_LEN: int = 255
@@ -126,3 +126,19 @@ class BoilerplateCommandSender:
 
     def get_async_response(self) -> Optional[RAPDU]:
         return self.backend.last_async_response
+
+def pack_derivation_path(derivation_path: str) -> bytes:
+    split = derivation_path.split("/")
+
+    if split[0] != "m":
+        raise ValueError("Error master expected")
+
+    path_bytes: bytes = (len(split) - 1).to_bytes(1, byteorder='little')
+    for value in split[1:]:
+        if value == "":
+            raise ValueError(f'Error missing value in split list "{split}"')
+        if value.endswith('\''):
+            path_bytes += Bip32Utils.HardenIndex(int(value[:-1])).to_bytes(4, byteorder='little')
+        else:
+            path_bytes += int(value).to_bytes(4, byteorder='little')
+    return path_bytes
