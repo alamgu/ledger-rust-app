@@ -51,7 +51,7 @@ def unpack_get_public_key_response(response: bytes) -> Tuple[int, bytes, int, by
     response, pub_key_len, pub_key = pop_size_prefixed_buf_from_buf(response)
     response, chain_code_len, chain_code = pop_size_prefixed_buf_from_buf(response)
 
-    assert pub_key_len == 65
+    assert pub_key_len == 32
     assert chain_code_len == 32
     assert len(response) == 0
     return pub_key_len, pub_key, chain_code_len, chain_code
