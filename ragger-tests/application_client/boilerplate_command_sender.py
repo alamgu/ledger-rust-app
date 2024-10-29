@@ -92,8 +92,8 @@ class BoilerplateCommandSender:
     @contextmanager
     def get_public_key_with_confirmation(self, path: str) -> Generator[None, None, None]:
         with self.backend.exchange_async(cla=CLA,
-                                         ins=InsType.GET_PUBLIC_KEY,
-                                         p1=P1.P1_CONFIRM,
+                                         ins=InsType.VERIFY_ADDRESS,
+                                         p1=P1.P1_START,
                                          p2=P2.P2_LAST,
                                          data=pack_derivation_path(path)) as response:
             yield response
