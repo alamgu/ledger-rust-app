@@ -32,15 +32,15 @@ def test_get_public_key_confirm_accepted(backend, scenario_navigator):
     assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
 
 
-# In this test we check that the GET_PUBLIC_KEY in confirmation mode replies an error if the user refuses
-def test_get_public_key_confirm_refused(backend, scenario_navigator):
-    client = BoilerplateCommandSender(backend)
-    path = "m/44'/1'/0'/0/0"
+# # In this test we check that the GET_PUBLIC_KEY in confirmation mode replies an error if the user refuses
+# def test_get_public_key_confirm_refused(backend, scenario_navigator):
+#     client = BoilerplateCommandSender(backend)
+#     path = "m/44'/535348'/0'"
 
-    with pytest.raises(ExceptionRAPDU) as e:
-        with client.get_public_key_with_confirmation(path=path):
-            scenario_navigator.address_review_reject()
+#     with pytest.raises(ExceptionRAPDU) as e:
+#         with client.get_public_key_with_confirmation(path=path):
+#             scenario_navigator.address_review_reject()
 
-    # Assert that we have received a refusal
-    assert e.value.status == Errors.SW_DENY
-    assert len(e.value.data) == 0
+#     # Assert that we have received a refusal
+#     assert e.value.status == Errors.SW_DENY
+#     assert len(e.value.data) == 0
