@@ -26,9 +26,10 @@ class P2(IntEnum):
 
 class InsType(IntEnum):
     GET_VERSION    = 0x00
-    GET_APP_NAME   = 0x04
-    GET_PUBLIC_KEY = 0x05
-    SIGN_TX        = 0x06
+    GET_APP_NAME   = 0x00
+    VERIFY_ADDRESS = 0x01
+    GET_PUBLIC_KEY = 0x02
+    SIGN_TX        = 0x03
 
 class Errors(IntEnum):
     SW_DENY                    = 0x6985
