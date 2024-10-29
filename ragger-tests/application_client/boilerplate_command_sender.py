@@ -8,7 +8,7 @@ from ragger.bip import pack_derivation_path
 
 MAX_APDU_LEN: int = 255
 
-CLA: int = 0xE0
+CLA: int = 0x00
 
 class P1(IntEnum):
     # Parameter 1 for first APDU number.
@@ -25,7 +25,7 @@ class P2(IntEnum):
     P2_MORE = 0x80
 
 class InsType(IntEnum):
-    GET_VERSION    = 0x03
+    GET_VERSION    = 0x00
     GET_APP_NAME   = 0x04
     GET_PUBLIC_KEY = 0x05
     SIGN_TX        = 0x06
