@@ -5,7 +5,7 @@ from application_client.boilerplate_response_unpacker import unpack_get_version_
 # In this test we check the behavior of the device when asked to provide the app version
 def test_version(backend):
     
-    with open("Cargo.toml", "rb") as f:
+    with open("./rust-app/Cargo.toml", "rb") as f:
         data = tomli.load(f)
     version = tuple(map(int, data['package']['version'].split('.')))
     # Use the app interface instead of raw interface
