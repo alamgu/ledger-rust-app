@@ -28,16 +28,16 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
     # As it requires on-screen validation, the function is asynchronous.
     # It will yield the result when the navigation is done
     with client.sign_tx(path=path, transaction=transaction):
-        navigator.navigate(instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK]
+        navigator.navigate(instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
 
                            , screen_change_before_first_instruction=True
                            , screen_change_after_last_instruction=True
                            )
-        navigator.navigate(instructions=[NavInsID.BOTH_CLICK]
-                           , timeout=2
-                           , screen_change_before_first_instruction=False
-                           , screen_change_after_last_instruction=True
-                           )
+        # navigator.navigate(instructions=[NavInsID.BOTH_CLICK]
+        #                    , timeout=2
+        #                    , screen_change_before_first_instruction=False
+        #                    , screen_change_after_last_instruction=True
+        #                    )
 
     # The device as yielded the result, parse it and ensure that the signature is correct
     response = client.get_async_response().data
