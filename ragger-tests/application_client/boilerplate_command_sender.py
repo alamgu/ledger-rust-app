@@ -22,7 +22,7 @@ class P2(IntEnum):
     # Parameter 2 for last APDU to receive.
     P2_LAST = 0x00
     # Parameter 2 for more APDU to receive.
-    P2_MORE = 0x80
+    P2_MORE = 0x00
 
 class InsType(IntEnum):
     GET_VERSION    = 0x00
@@ -101,25 +101,20 @@ class BoilerplateCommandSender:
 
     @contextmanager
     def sign_tx(self, path: str, transaction: bytes) -> Generator[None, None, None]:
-        self.backend.exchange(cla=CLA,
-                              ins=InsType.SIGN_TX,
-                              p1=P1.P1_START,
-                              p2=P2.P2_MORE,
-                              data=pack_derivation_path(path))
-        messages = split_message(transaction, MAX_APDU_LEN)
-        idx: int = P1.P1_START + 1
+        tx_len = (len(transaction)).to_bytes(4, byteorder='little')
+        payload = tx_len + transaction + pack_derivation_path(path)
+        messages = split_message(payload, MAX_APDU_LEN)
 
         for msg in messages[:-1]:
             self.backend.exchange(cla=CLA,
                                   ins=InsType.SIGN_TX,
-                                  p1=idx,
+                                  p1=P1.P1_START,
                                   p2=P2.P2_MORE,
                                   data=msg)
-            idx += 1
 
         with self.backend.exchange_async(cla=CLA,
                                          ins=InsType.SIGN_TX,
-                                         p1=idx,
+                                         p1=P1.P1_START,
                                          p2=P2.P2_LAST,
                                          data=messages[-1]) as response:
             yield response
