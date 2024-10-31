@@ -176,3 +176,12 @@ The exact output you see will vary, since Ledger devices should not be configure
 ## Development
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+```bash
+pip install -r ragger-tests/requirements.txt 
+```
+
+```shell
+pytest tests/ --tb=short -v --device {nanosp | nanox | stax | flex}
+pytest ragger-tests/ --tb=short -v --device nanosp
+```
