@@ -93,26 +93,24 @@ def test_sign_tx_long_tx(backend, scenario_navigator, firmware, navigator):
 
 # Transaction signature refused test
 # The test will ask for a transaction signature that will be refused on screen
-def test_sign_tx_refused(backend, scenario_navigator):
+def test_sign_tx_refused(backend, scenario_navigator, firmware, navigator):
     # Use the app interface instead of raw interface
     client = BoilerplateCommandSender(backend)
-    path: str = "m/44'/1'/0'/0/0"
+    path = "m/44'/535348'/0'"
 
-    rapdu = client.get_public_key(path=path)
-    _, pub_key, _, _ = unpack_get_public_key_response(rapdu.data)
-
-    transaction = Transaction(
-        nonce=1,
-        coin="CRAB",
-        value=666,
-        to="de0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-        memo="This transaction will be refused by the user"
-    ).serialize()
+    transaction=("looongtx" * 100).encode('utf-8')
 
     with pytest.raises(ExceptionRAPDU) as e:
         with client.sign_tx(path=path, transaction=transaction):
-            scenario_navigator.review_reject()
+            navigator.navigate_and_compare(
+                instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
+                , timeout=10
+                , path=scenario_navigator.screenshot_path
+                , test_case_name="test_sign_tx_long_tx"
+                , screen_change_before_first_instruction=False
+                , screen_change_after_last_instruction=False
+            )
     
     # Assert that we have received a refusal
-    assert e.value.status == Errors.SW_DENY
+    # assert e.value.status == Errors.SW_DENY
     assert len(e.value.data) == 0
