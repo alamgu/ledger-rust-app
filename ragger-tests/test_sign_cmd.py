@@ -28,11 +28,24 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
     # As it requires on-screen validation, the function is asynchronous.
     # It will yield the result when the navigation is done
     with client.sign_tx(path=path, transaction=transaction):
-        navigator.navigate(instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
-
-                           , screen_change_before_first_instruction=True
-                           , screen_change_after_last_instruction=True
-                           )
+        # navigator.navigate_until_text_and_compare(
+        #     navigate_instruction=NavInsID.RIGHT_CLICK
+        #     , validation_instructions=[NavInsID.BOTH_CLICK]
+        #     , text="Approve"
+        #     , timeout=10
+        #     , path=scenario_navigator.screenshot_path
+        #     , test_case_name="test_sign_tx_short_tx"
+        #     , screen_change_before_first_instruction=False
+        #     , screen_change_after_last_instruction=False
+        # )
+        navigator.navigate_and_compare(
+            instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
+            , timeout=10
+            , path=scenario_navigator.screenshot_path
+            , test_case_name="test_sign_tx_short_tx"
+            , screen_change_before_first_instruction=False
+            , screen_change_after_last_instruction=False
+        )
         # navigator.navigate(instructions=[NavInsID.BOTH_CLICK]
         #                    , timeout=2
         #                    , screen_change_before_first_instruction=False
@@ -41,10 +54,10 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
 
     # The device as yielded the result, parse it and ensure that the signature is correct
     response = client.get_async_response().data
-    assert response=="ssss".encode('utf-8')
-    # _, der_sig, _ = unpack_sign_tx_response(response)
+    der_sig_len, der_sig, _ = unpack_sign_tx_response(response)
+    assert der_sig_len == 64
     # assert check_signature_validity(public_key, der_sig, transaction)
-    
+
 # In this test a transaction is sent to the device to be signed and validated on screen.
 # The transaction is short and will be sent in one chunk
 # We will ensure that the displayed information is correct by using screenshots comparison
