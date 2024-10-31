@@ -61,7 +61,8 @@ def unpack_get_public_key_response(response: bytes) -> Tuple[int, bytes, int, by
 #            der_sig (var)
 #            v (1)
 def unpack_sign_tx_response(response: bytes) -> Tuple[int, bytes, int]:
-    response, der_sig_len, der_sig = pop_size_prefixed_buf_from_buf(response)
+    der_sig_len=64
+    response, der_sig = pop_sized_buf_from_buffer(response, der_sig_len)
     response, v = pop_sized_buf_from_buffer(response, 1)
 
     assert len(response) == 0
