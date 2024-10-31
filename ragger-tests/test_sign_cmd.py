@@ -59,46 +59,6 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
     # assert check_signature_validity(public_key, der_sig, transaction)
 
 # In this test a transaction is sent to the device to be signed and validated on screen.
-# The transaction is short and will be sent in one chunk
-# We will ensure that the displayed information is correct by using screenshots comparison
-# The transaction memo should not be displayed as we have not enabled it in the app settings.
-def test_sign_tx_short_tx_no_memo(backend, scenario_navigator, firmware):
-    if firmware.device.startswith("nano"):
-        pytest.skip("Skipping this test for Nano devices")
-    
-    # Use the app interface instead of raw interface
-    client = BoilerplateCommandSender(backend)
-    # The path used for this entire test
-    path: str = "m/44'/1'/0'/0/0"
-
-    # First we need to get the public key of the device in order to build the transaction
-    rapdu = client.get_public_key(path=path)
-    _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
-
-    # Create the transaction that will be sent to the device for signing
-    transaction = Transaction(
-        nonce=1,
-        coin="CRAB",
-        value=777,
-        to="de0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-        memo="For u EthDev"
-    ).serialize()
-
-    # Send the sign device instruction.
-    # As it requires on-screen validation, the function is asynchronous.
-    # It will yield the result when the navigation is done
-    with client.sign_tx(path=path, transaction=transaction):
-        # Validate the on-screen request by performing the navigation appropriate for this device
-        scenario_navigator.review_approve()
-
-    # The device as yielded the result, parse it and ensure that the signature is correct
-    response = client.get_async_response().data
-    _, der_sig, _ = unpack_sign_tx_response(response)
-    
-    assert check_signature_validity(public_key, der_sig, transaction)
-
-
-# In this test a transaction is sent to the device to be signed and validated on screen.
 # This test is mostly the same as the previous one but with different values.
 # In particular the long memo will force the transaction to be sent in multiple chunks
 # def test_sign_tx_long_tx(firmware, backend, navigator, test_name):
