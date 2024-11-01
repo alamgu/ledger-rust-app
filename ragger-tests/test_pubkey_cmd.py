@@ -12,11 +12,9 @@ from utils import ROOT_SCREENSHOT_PATH
 
 # In this test we check that the GET_PUBLIC_KEY works in non-confirmation mode
 def test_get_public_key_no_confirm(backend):
-    pytest.skip("sss")
     for path in [ "m/44'/535348'/0'"]:
         client = BoilerplateCommandSender(backend)
-        response = client.get_public_key(path=path).data
-        _, public_key, _, _ = unpack_get_public_key_response(response)
+        _, public_key, _, _ = client.get_public_key(path=path)
 
         assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
 
