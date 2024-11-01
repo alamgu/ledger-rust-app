@@ -76,21 +76,23 @@ class BoilerplateCommandSender:
         major, minor, patch = unpack("BBB", response[:3])
         return ((major, minor, patch), response[3:].decode("ascii"))
 
-    def get_public_key(self, path: str) -> RAPDU:
-        return self.backend.exchange(cla=CLA,
-                                     ins=InsType.GET_PUBLIC_KEY,
-                                     p1=P1.P1_START,
-                                     p2=P2.P2_LAST,
-                                     data=pack_derivation_path(path))
+    def get_public_key(self, path: str) -> Tuple[int, bytes, int, bytes]:
+        return self.get_public_key_impl(InsType.GET_PUBLIC_KEY, path)
+
+    def get_public_key_with_confirmation(self, path: str) -> Tuple[int, bytes, int, bytes]:
+        return self.get_public_key_impl(InsType.VERIFY_ADDRESS, path)
 
 
-    def get_public_key_with_confirmation(self, path: str) -> bytes:
-        print(f"get_public_key_with_confirmation")
-        return self.send_fn(cla=CLA,
-                                  ins=InsType.VERIFY_ADDRESS,
-                                  p1=P1.P1_START,
-                                  p2=P2.P2_LAST,
-                                  payload=pack_derivation_path(path))
+    def get_public_key_impl(self, ins, path: str) -> Tuple[int, bytes, int, bytes]:
+        response = self.send_fn(cla=CLA,
+                                ins=ins,
+                                p1=P1.P1_START,
+                                p2=P2.P2_LAST,
+                                payload=pack_derivation_path(path))
+        response, pub_key_len, pub_key = pop_size_prefixed_buf_from_buf(response)
+        response, chain_code_len, chain_code = pop_size_prefixed_buf_from_buf(response)
+        return pub_key_len, pub_key, chain_code_len, chain_code
+
 
     @contextmanager
     def sign_tx(self, path: str, transaction: bytes) -> Generator[None, None, None]:
