@@ -22,24 +22,21 @@ def test_get_public_key_no_confirm(backend):
 
 
 # In this test we check that the GET_PUBLIC_KEY works in confirmation mode
-def test_get_public_key_confirm_accepted(backend, scenario_navigator):
+def test_get_public_key_confirm_accepted(backend, scenario_navigator, firmware, navigator):
     client = BoilerplateCommandSender(backend)
     path = "m/44'/535348'/0'"
 
-    @contextmanager
-    def runApdu():
-        result = client.get_public_key_with_confirmation(path=path)
-        # with
-        return result
-
-    with runApdu():
+    def nav_task():
         scenario_navigator.address_review_approve()
 
-    response = client.get_async_response().data
-    _, public_key, _, _ = unpack_get_public_key_response(response)
+    def apdu_task():
+        return client.get_public_key_with_confirmation(path=path)
 
-    assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
-
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(apdu_task)
+        executor.submit(nav_task)
+        _, public_key, _, _ = future.result()
+        assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
 
 # # In this test we check that the GET_PUBLIC_KEY in confirmation mode replies an error if the user refuses
 # def test_get_public_key_confirm_refused(backend, scenario_navigator):
@@ -54,30 +51,3 @@ def test_get_public_key_confirm_accepted(backend, scenario_navigator):
 #     assert e.value.status == Errors.SW_DENY
 #     assert len(e.value.data) == 0
 
-# def test_get_public_key_confirm_accepted(backend, scenario_navigator):
-#     client = BoilerplateCommandSender(backend)
-#     path = "m/44'/535348'/0'"
-
-#     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-#         future = executor.submit(client.get_public_key_with_confirmation(path=path))
-#         print("runInAsync 2")
-#         future2 = executor.submit(scenario_navigator.address_review_approve())
-#         print("runInAsync 3")
-#         return future.result()
-#     # await doasync
-#     #     # Get the result when needed
-#     #     result = future.result()
-#     #     print(result)
-#     # async def runInAsync():
-#     #     print("start runInAsync")
-#     #     doasync = asyncio.create_task(client.get_public_key_with_confirmation(path=path))
-#     #     print("runInAsync 2")
-#     #     scenario_navigator.address_review_approve()
-#     #     print("runInAsync 3")
-#     #     return await doasync
-
-#     print("before runInAsync")
-#     response = asyncio.run(runInAsync())
-#     _, public_key, _, _ = unpack_get_public_key_response(response)
-
-#     assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
