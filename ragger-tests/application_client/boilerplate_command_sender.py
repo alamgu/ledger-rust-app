@@ -55,31 +55,23 @@ def split_message(message: bytes, max_size: int) -> List[bytes]:
 class BoilerplateCommandSender:
     def __init__(self, backend: BackendInterface) -> None:
         self.backend = backend
+        self.send_fn = self.send_chunks
 
+    def set_use_block_protocol(self, v):
+        if v:
+            self.send_fn = self.send_chunks
+        else:
+            self.send_fn = self.send_with_blocks
 
-    def get_app_and_version(self) -> RAPDU:
-        return self.backend.exchange(cla=0xB0,  # specific CLA for BOLOS
-                                     ins=0x01,  # specific INS for get_app_and_version
-                                     p1=P1.P1_START,
-                                     p2=P2.P2_LAST,
-                                     data=b"")
-
-
-    def get_version(self) -> RAPDU:
-        return self.backend.exchange(cla=CLA,
-                                     ins=InsType.GET_VERSION,
-                                     p1=P1.P1_START,
-                                     p2=P2.P2_LAST,
-                                     data=b"")
-
-
-    def get_app_name(self) -> RAPDU:
-        return self.backend.exchange(cla=CLA,
-                                     ins=InsType.GET_APP_NAME,
-                                     p1=P1.P1_START,
-                                     p2=P2.P2_LAST,
-                                     data=b"")
-
+    def get_app_and_version(self) -> Tuple[Tuple[int, int, int], str]:
+        response = self.send_fn(cla=CLA,
+                            ins=InsType.GET_VERSION,
+                            p1=P1.P1_START,
+                            p2=P2.P2_LAST,
+                            payload=b"")
+        print(response)
+        major, minor, patch = unpack("BBB", response[:3])
+        return ((major, minor, patch), response[3:].decode("ascii"))
 
     def get_public_key(self, path: str) -> RAPDU:
         return self.backend.exchange(cla=CLA,
