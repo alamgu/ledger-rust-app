@@ -94,9 +94,7 @@ class BoilerplateCommandSender:
         return pub_key_len, pub_key, chain_code_len, chain_code
 
 
-    @contextmanager
-    def sign_tx(self, path: str, transaction: bytes) -> Generator[None, None, None]:
-        print ("started sign_tx")
+    def sign_tx(self, path: str, transaction: bytes) -> bytes:
         tx_len = (len(transaction)).to_bytes(4, byteorder='little')
         payload = tx_len + transaction + pack_derivation_path(path)
         return self.send_fn(cla=CLA,
@@ -104,13 +102,6 @@ class BoilerplateCommandSender:
                      p1=P1.P1_START,
                      p2=P2.P2_LAST,
                      payload=payload)
-        # with self.send_fn(cla=CLA,
-        #                       ins=InsType.SIGN_TX,
-        #                       p1=P1.P1_START,
-        #                       p2=P2.P2_LAST,
-        #                       payload=payload) as response:
-        #     print ("before sign_tx yield")
-        #     yield response
 
     def get_async_response(self) -> Optional[RAPDU]:
         return self.backend.last_async_response
@@ -121,32 +112,18 @@ class BoilerplateCommandSender:
             messages = [b'']
 
         result = b''
-        print(f"send_chunks {messages}")
 
         for msg in messages:
-            print(f"send_chunks {msg}")
-            # with self.backend.exchange_async(cla=cla,
-            #                                ins=ins,
-            #                                p1=p1,
-            #                                p2=p2,
-            #                                data=msg) as resp:
-            # rapdu = self.backend.exchange(cla=cla,
-            #                                ins=ins,
-            #                                p1=p1,
-            #                                p2=p2,
-            #                                data=msg)
-            self.backend.exchange(cla=cla,
+            # print(f"send_chunks {msg}")
+            rapdu = self.backend.exchange(cla=cla,
                                            ins=ins,
                                            p1=p1,
                                            p2=p2,
                                            data=msg)
-            print(f"after exchange {msg}")
-            # rv = rapdu.data
-            # print(f"send_chunks got rv {rv}")
-            # result = rv
+            # print(f"send_chunks after {msg}")
+            result = rapdu.data
 
         return result
-
 
     # Block Protocol
     def send_with_blocks(self, cla, ins, p1, p2, payload: bytes, extra_data: Dict[str, bytes]) -> bytes:
@@ -244,3 +221,12 @@ def pack_derivation_path(derivation_path: str) -> bytes:
         else:
             path_bytes += int(value).to_bytes(4, byteorder='little')
     return path_bytes
+
+# remainder, data_len, data
+def pop_sized_buf_from_buffer(buffer:bytes, size:int) -> Tuple[bytes, bytes]:
+    return buffer[size:], buffer[0:size]
+
+# remainder, data_len, data
+def pop_size_prefixed_buf_from_buf(buffer:bytes) -> Tuple[bytes, int, bytes]:
+    data_len = buffer[0]
+    return buffer[1+data_len:], data_len, buffer[1:data_len+1]
