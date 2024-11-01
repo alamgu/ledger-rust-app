@@ -1,6 +1,9 @@
 from enum import IntEnum
-from typing import Generator, List, Optional
+from typing import Generator, List, Optional, Tuple
 from contextlib import contextmanager
+from typing import Dict
+from hashlib import sha256
+from struct import unpack
 
 from ragger.backend.interface import BackendInterface, RAPDU
 from bip_utils import Bip32Utils
@@ -81,38 +84,148 @@ class BoilerplateCommandSender:
                                      data=pack_derivation_path(path))
 
 
-    @contextmanager
-    def get_public_key_with_confirmation(self, path: str) -> Generator[None, None, None]:
-        with self.backend.exchange_async(cla=CLA,
-                                         ins=InsType.VERIFY_ADDRESS,
-                                         p1=P1.P1_START,
-                                         p2=P2.P2_LAST,
-                                         data=pack_derivation_path(path)) as response:
-            yield response
-
+    def get_public_key_with_confirmation(self, path: str) -> bytes:
+        print(f"get_public_key_with_confirmation")
+        return self.send_fn(cla=CLA,
+                                  ins=InsType.VERIFY_ADDRESS,
+                                  p1=P1.P1_START,
+                                  p2=P2.P2_LAST,
+                                  payload=pack_derivation_path(path))
 
     @contextmanager
     def sign_tx(self, path: str, transaction: bytes) -> Generator[None, None, None]:
+        print ("started sign_tx")
         tx_len = (len(transaction)).to_bytes(4, byteorder='little')
         payload = tx_len + transaction + pack_derivation_path(path)
-        messages = split_message(payload, MAX_APDU_LEN)
-
-        for msg in messages[:-1]:
-            self.backend.exchange(cla=CLA,
-                                  ins=InsType.SIGN_TX,
-                                  p1=P1.P1_START,
-                                  p2=P2.P2_MORE,
-                                  data=msg)
-
-        with self.backend.exchange_async(cla=CLA,
-                                         ins=InsType.SIGN_TX,
-                                         p1=P1.P1_START,
-                                         p2=P2.P2_LAST,
-                                         data=messages[-1]) as response:
-            yield response
+        return self.send_fn(cla=CLA,
+                     ins=InsType.SIGN_TX,
+                     p1=P1.P1_START,
+                     p2=P2.P2_LAST,
+                     payload=payload)
+        # with self.send_fn(cla=CLA,
+        #                       ins=InsType.SIGN_TX,
+        #                       p1=P1.P1_START,
+        #                       p2=P2.P2_LAST,
+        #                       payload=payload) as response:
+        #     print ("before sign_tx yield")
+        #     yield response
 
     def get_async_response(self) -> Optional[RAPDU]:
         return self.backend.last_async_response
+
+    def send_chunks(self, cla, ins, p1, p2, payload: bytes) -> bytes:
+        messages = split_message(payload, MAX_APDU_LEN)
+        if messages == []:
+            messages = [b'']
+
+        result = b''
+        print(f"send_chunks {messages}")
+
+        for msg in messages:
+            print(f"send_chunks {msg}")
+            # with self.backend.exchange_async(cla=cla,
+            #                                ins=ins,
+            #                                p1=p1,
+            #                                p2=p2,
+            #                                data=msg) as resp:
+            # rapdu = self.backend.exchange(cla=cla,
+            #                                ins=ins,
+            #                                p1=p1,
+            #                                p2=p2,
+            #                                data=msg)
+            self.backend.exchange(cla=cla,
+                                           ins=ins,
+                                           p1=p1,
+                                           p2=p2,
+                                           data=msg)
+            print(f"after exchange {msg}")
+            # rv = rapdu.data
+            # print(f"send_chunks got rv {rv}")
+            # result = rv
+
+        return result
+
+
+    # Block Protocol
+    def send_with_blocks(self, cla, ins, p1, p2, payload: bytes, extra_data: Dict[str, bytes]) -> bytes:
+        chunk_size = 180
+        parameter_list = []
+
+        if not isinstance(payload, list):
+            payload = [payload]
+
+        data = {}
+
+        if extra_data:
+            data.update(extra_data)
+
+        for item in payload:
+            chunk_list = []
+            for i in range(0, len(item), chunk_size):
+                chunk = item[i:i + chunk_size]
+                chunk_list.append(chunk)
+
+            last_hash = b'\x00' * 32
+
+            for chunk in reversed(chunk_list):
+                linked_chunk = last_hash + chunk
+                last_hash = sha256(linked_chunk)
+                data[last_hash.hex()] = linked_chunk
+
+            parameter_list.append(last_hash)
+
+        initialPayload = HostToLedger.START.to_bytes(1) + parameter_list, data
+
+        return self.handle_block_protocol(cla, ins, p1, p2, initialPayload, data)
+
+    # def handle_block_protocol(self, cla, ins, p1, p2, initialPayload: bytes, data: Dict[str, bytes]) -> bytes:
+    #     payload = initialPayload
+    #     rv_instruction = -1
+    #     result: bytes
+
+    #     while (rv_instruction != LedgerToHost.RESULT_FINAL):
+    #         rv = self.backend.exchange(cla=cla,
+    #                                  ins=ins,
+    #                                  p1=p1,
+    #                                  p2=p2,
+    #                                  data=payload)
+    #         print("Received response")
+    #         rv_instruction = rv[0]
+    #         rv_payload = rv[1:-2]
+
+    #         match rv_instruction:
+    #             case LedgerToHost.RESULT_ACCUMULATING:
+    #                 result = result + rv_payload
+    #                 payload = HostToLedger.RESULT_ACCUMULATING_RESPONSE.to_bytes(1)
+    #             case LedgerToHost.RESULT_FINAL:
+    #                 result = result + rv_payload
+    #             case LedgerToHost.GET_CHUNK:
+    #                 chunk_hash = rv_payload.hex()
+    #                 if chunk_hash in data:
+    #                     chunk = data[rv_payload.hex()]
+    #                     payload = HostToLedger.GET_CHUNK_RESPONSE_SUCCESS.to_bytes(1) + chunk
+    #                 else:
+    #                     payload = HostToLedger.GET_CHUNK_RESPONSE_FAILURE.to_bytes(1)
+    #             case LedgerToHost.PUT_CHUNK:
+    #                 data[sha256(rv_payload).hexdigest()] = rv_payload
+    #                 payload = HostToLedger.PUT_CHUNK_RESPONSE.to_bytes(1)
+    #             case _:
+    #                 raise RuntimeError "Unknown instruction returned from ledger"
+
+    #     return result
+
+class LedgerToHost(IntEnum):
+    RESULT_ACCUMULATING = 0
+    RESULT_FINAL = 1
+    GET_CHUNK = 2
+    PUT_CHUNK = 3
+
+class HostToLedger(IntEnum):
+    START = 0
+    GET_CHUNK_RESPONSE_SUCCESS = 1
+    GET_CHUNK_RESPONSE_FAILURE = 2
+    PUT_CHUNK_RESPONSE = 3
+    RESULT_ACCUMULATING_RESPONSE = 4
 
 def pack_derivation_path(derivation_path: str) -> bytes:
     split = derivation_path.split("/")
