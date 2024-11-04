@@ -1,5 +1,6 @@
 import pytest
 import concurrent.futures
+import time
 
 from application_client.boilerplate_command_sender import BoilerplateCommandSender, Errors
 from application_client.boilerplate_response_unpacker import unpack_get_public_key_response
@@ -32,6 +33,7 @@ def test_get_public_key_confirm_accepted(backend, scenario_navigator, firmware, 
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future = executor.submit(apdu_task)
+        time.sleep(2)
         executor.submit(nav_task)
         _, public_key, _, _ = future.result()
         assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
