@@ -15,6 +15,8 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
     # The path used for this entire test
     path = "m/44'/535348'/0'"
 
+    toggle_blind_sign(navigator)
+
     _, public_key, _, _ = client.get_public_key(path=path)
 
     transaction="smalltx".encode('utf-8')
@@ -40,12 +42,16 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
 
         der_sig = future.result()
         assert len(der_sig) == 64
+
+        toggle_blind_sign(navigator)
         # assert check_signature_validity(public_key, der_sig, transaction)
 
 def test_sign_tx_long_tx(backend, scenario_navigator, firmware, navigator):
     # Use the app interface instead of raw interface
     client = BoilerplateCommandSender(backend)
     path = "m/44'/535348'/0'"
+
+    toggle_blind_sign(navigator)
 
     _, public_key, _, _ = client.get_public_key(path=path)
 
@@ -73,6 +79,7 @@ def test_sign_tx_long_tx(backend, scenario_navigator, firmware, navigator):
         der_sig = future.result()
         assert len(der_sig) == 64
         # assert check_signature_validity(public_key, der_sig, transaction)
+        toggle_blind_sign(navigator)
 
 
 # Transaction signature refused test
