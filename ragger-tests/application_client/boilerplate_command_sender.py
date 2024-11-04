@@ -96,7 +96,7 @@ class BoilerplateCommandSender:
 
     def sign_tx(self, path: str, transaction: bytes) -> bytes:
         tx_len = (len(transaction)).to_bytes(4, byteorder='little')
-        payload = tx_len + transaction + pack_derivation_path(path)
+        payload = [tx_len + transaction, pack_derivation_path(path)]
         return self.send_fn(cla=CLA,
                      ins=InsType.SIGN_TX,
                      p1=P1.P1_START,
@@ -106,8 +106,8 @@ class BoilerplateCommandSender:
     def get_async_response(self) -> Optional[RAPDU]:
         return self.backend.last_async_response
 
-    def send_chunks(self, cla, ins, p1, p2, payload: bytes) -> bytes:
-        messages = split_message(payload, MAX_APDU_LEN)
+    def send_chunks(self, cla, ins, p1, p2, payload: [bytes]) -> bytes:
+        messages = split_message(b''.join(payload), MAX_APDU_LEN)
         if messages == []:
             messages = [b'']
 
@@ -126,7 +126,7 @@ class BoilerplateCommandSender:
         return result
 
     # Block Protocol
-    def send_with_blocks(self, cla, ins, p1, p2, payload: bytes, extra_data: Dict[str, bytes] = {}) -> bytes:
+    def send_with_blocks(self, cla, ins, p1, p2, payload: [bytes], extra_data: Dict[str, bytes] = {}) -> bytes:
         chunk_size = 180
         parameter_list = []
 
