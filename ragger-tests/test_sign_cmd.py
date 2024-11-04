@@ -34,6 +34,8 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future = executor.submit(apdu_task)
+        # This delay is necessary, otherwise the test hangs
+        time.sleep(2)
         executor.submit(nav_task)
 
         der_sig = future.result()
