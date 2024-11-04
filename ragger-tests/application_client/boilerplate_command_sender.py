@@ -62,9 +62,9 @@ class BoilerplateCommandSender:
 
     def set_use_block_protocol(self, v):
         if v:
-            self.send_fn = self.send_chunks
-        else:
             self.send_fn = self.send_with_blocks
+        else:
+            self.send_fn = self.send_chunks
 
     def get_app_and_version(self) -> Tuple[Tuple[int, int, int], str]:
         response = self.send_fn(cla=CLA,
@@ -126,7 +126,7 @@ class BoilerplateCommandSender:
         return result
 
     # Block Protocol
-    def send_with_blocks(self, cla, ins, p1, p2, payload: bytes, extra_data: Dict[str, bytes]) -> bytes:
+    def send_with_blocks(self, cla, ins, p1, p2, payload: bytes, extra_data: Dict[str, bytes] = {}) -> bytes:
         chunk_size = 180
         parameter_list = []
 
@@ -148,50 +148,49 @@ class BoilerplateCommandSender:
 
             for chunk in reversed(chunk_list):
                 linked_chunk = last_hash + chunk
-                last_hash = sha256(linked_chunk)
+                last_hash = sha256(linked_chunk).digest()
                 data[last_hash.hex()] = linked_chunk
 
             parameter_list.append(last_hash)
 
-        initialPayload = HostToLedger.START.to_bytes(1) + parameter_list, data
+        initialPayload = HostToLedger.START.to_bytes(1, byteorder='little') + b''.join(parameter_list)
 
         return self.handle_block_protocol(cla, ins, p1, p2, initialPayload, data)
 
-    # def handle_block_protocol(self, cla, ins, p1, p2, initialPayload: bytes, data: Dict[str, bytes]) -> bytes:
-    #     payload = initialPayload
-    #     rv_instruction = -1
-    #     result: bytes
+    def handle_block_protocol(self, cla, ins, p1, p2, initialPayload: bytes, data: Dict[str, bytes]) -> bytes:
+        payload = initialPayload
+        rv_instruction = -1
+        result = b''
 
-    #     while (rv_instruction != LedgerToHost.RESULT_FINAL):
-    #         rv = self.backend.exchange(cla=cla,
-    #                                  ins=ins,
-    #                                  p1=p1,
-    #                                  p2=p2,
-    #                                  data=payload)
-    #         print("Received response")
-    #         rv_instruction = rv[0]
-    #         rv_payload = rv[1:-2]
+        while (rv_instruction != LedgerToHost.RESULT_FINAL):
+            rapdu = self.backend.exchange(cla=cla,
+                                     ins=ins,
+                                     p1=p1,
+                                     p2=p2,
+                                     data=payload)
+            rv = rapdu.data
+            rv_instruction = rv[0]
+            rv_payload = rv[1:]
 
-    #         match rv_instruction:
-    #             case LedgerToHost.RESULT_ACCUMULATING:
-    #                 result = result + rv_payload
-    #                 payload = HostToLedger.RESULT_ACCUMULATING_RESPONSE.to_bytes(1)
-    #             case LedgerToHost.RESULT_FINAL:
-    #                 result = result + rv_payload
-    #             case LedgerToHost.GET_CHUNK:
-    #                 chunk_hash = rv_payload.hex()
-    #                 if chunk_hash in data:
-    #                     chunk = data[rv_payload.hex()]
-    #                     payload = HostToLedger.GET_CHUNK_RESPONSE_SUCCESS.to_bytes(1) + chunk
-    #                 else:
-    #                     payload = HostToLedger.GET_CHUNK_RESPONSE_FAILURE.to_bytes(1)
-    #             case LedgerToHost.PUT_CHUNK:
-    #                 data[sha256(rv_payload).hexdigest()] = rv_payload
-    #                 payload = HostToLedger.PUT_CHUNK_RESPONSE.to_bytes(1)
-    #             case _:
-    #                 raise RuntimeError "Unknown instruction returned from ledger"
+            if rv_instruction == LedgerToHost.RESULT_ACCUMULATING:
+                result = result + rv_payload
+                payload = HostToLedger.RESULT_ACCUMULATING_RESPONSE.to_bytes(1, byteorder='little')
+            elif rv_instruction == LedgerToHost.RESULT_FINAL:
+                result = result + rv_payload
+            elif rv_instruction == LedgerToHost.GET_CHUNK:
+                chunk_hash = rv_payload.hex()
+                if chunk_hash in data:
+                    chunk = data[rv_payload.hex()]
+                    payload = HostToLedger.GET_CHUNK_RESPONSE_SUCCESS.to_bytes(1, byteorder='little') + chunk
+                else:
+                    payload = HostToLedger.GET_CHUNK_RESPONSE_FAILURE.to_bytes(1, byteorder='little')
+            elif rv_instruction == LedgerToHost.PUT_CHUNK:
+                data[sha256(rv_payload).hexdigest()] = rv_payload
+                payload = HostToLedger.PUT_CHUNK_RESPONSE.to_bytes(1, byteorder='little')
+            else:
+                raise RuntimeError("Unknown instruction returned from ledger")
 
-    #     return result
+        return result
 
 class LedgerToHost(IntEnum):
     RESULT_ACCUMULATING = 0
