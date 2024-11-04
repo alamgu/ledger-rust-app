@@ -26,7 +26,7 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
 
     def nav_task():
         navigator.navigate_and_compare(
-            instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
+            instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
             , timeout=10
             , path=scenario_navigator.screenshot_path
             , test_case_name="test_sign_tx_short_tx"
@@ -62,7 +62,7 @@ def test_sign_tx_long_tx(backend, scenario_navigator, firmware, navigator):
 
     def nav_task():
         navigator.navigate_and_compare(
-            instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
+            instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK]
             , timeout=10
             , path=scenario_navigator.screenshot_path
             , test_case_name="test_sign_tx_long_tx"
