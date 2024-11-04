@@ -99,3 +99,10 @@ def test_sign_tx_refused(backend, scenario_navigator, firmware, navigator):
     # Assert that we have received a refusal
     # assert e.value.status == Errors.SW_DENY
     assert len(e.value.data) == 0
+
+def toggle_blind_sign(navigator):
+    navigator.navigate(
+        instructions=[NavInsID.RIGHT_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK, NavInsID.BOTH_CLICK, NavInsID.RIGHT_CLICK, NavInsID.BOTH_CLICK, NavInsID.LEFT_CLICK, NavInsID.LEFT_CLICK]
+        , timeout=10
+        , screen_change_before_first_instruction=False
+    )
