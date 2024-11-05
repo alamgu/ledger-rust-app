@@ -25,18 +25,9 @@ def test_get_public_key_confirm_accepted(backend, scenario_navigator, firmware, 
     client = BoilerplateCommandSender(backend, use_block_protocol=True)
     path = "m/44'/535348'/0'"
 
-    def nav_task():
-        scenario_navigator.address_review_approve()
+    _, public_key, _, _ = client.get_public_key_with_confirmation(scenario_navigator, path=path)
+    assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
 
-    def apdu_task():
-        return client.get_public_key_with_confirmation(path=path)
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(apdu_task)
-        time.sleep(2)
-        executor.submit(nav_task)
-        _, public_key, _, _ = future.result()
-        assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
 
 # # In this test we check that the GET_PUBLIC_KEY in confirmation mode replies an error if the user refuses
 # def test_get_public_key_confirm_refused(backend, scenario_navigator):
@@ -50,4 +41,3 @@ def test_get_public_key_confirm_accepted(backend, scenario_navigator, firmware, 
 #     # Assert that we have received a refusal
 #     assert e.value.status == Errors.SW_DENY
 #     assert len(e.value.data) == 0
-

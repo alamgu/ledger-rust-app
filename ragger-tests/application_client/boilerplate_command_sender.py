@@ -82,7 +82,8 @@ class BoilerplateCommandSender:
     def get_public_key(self, path: str) -> Tuple[int, bytes, int, bytes]:
         return self.get_public_key_impl(InsType.GET_PUBLIC_KEY, path)
 
-    def get_public_key_with_confirmation(self, path: str) -> Tuple[int, bytes, int, bytes]:
+    def get_public_key_with_confirmation(self, scenario, path: str) -> Tuple[int, bytes, int, bytes]:
+        self.scenario = scenario
         return self.get_public_key_impl(InsType.VERIFY_ADDRESS, path)
 
 
@@ -164,14 +165,31 @@ class BoilerplateCommandSender:
         payload = initialPayload
         rv_instruction = -1
         result = b''
+        count = 0
 
         while (rv_instruction != LedgerToHost.RESULT_FINAL):
-            rapdu = self.backend.exchange(cla=cla,
-                                     ins=ins,
-                                     p1=p1,
-                                     p2=p2,
-                                     data=payload)
-            rv = rapdu.data
+            with self.backend.exchange_async(cla=cla,
+                                             ins=ins,
+                                             p1=p1,
+                                             p2=p2,
+                                             data=payload):
+                if count == 1:
+                    # Tested scenario was "get_public_key_confirm_accepted", so only this one is managed.
+                    # In this scenario, the previous changed was the 'Working...' screen, so now we
+                    # can trigger the "Approve address review" scenario
+                    self.scenario.address_review_approve()
+
+                try:
+                    # smallest possible wait to block as few as possible when we don't
+                    # except the screen to change during this particular transaction
+                    self.backend.wait_for_screen_change(1)
+                    count += 1
+                except:
+                    # Some transactions don't trigger a screen change, so the error
+                    # is ignored
+                    pass
+
+            rv = self.backend.last_async_response.data
             rv_instruction = rv[0]
             rv_payload = rv[1:]
 
