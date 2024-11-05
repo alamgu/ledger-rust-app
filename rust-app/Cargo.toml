@@ -26,7 +26,7 @@ extra_debug = ["ledger-log/log_trace"]
 [target.'cfg(target_family = "bolos")'.dependencies]
 ledger_device_sdk = "1.18.1"
 ledger_secure_sdk_sys = "1.5.1"
-ledger-prompts-ui = { git = "https://github.com/alamgu/ledger-prompts-ui" }
+ledger-prompts-ui = { git = "https://github.com/alamgu/ledger-prompts-ui", branch = "ragger-compat" }
 
 [target.'cfg(target_family = "bolos")'.dev-dependencies.ledger_device_sdk]
 version = "1.18.1"
