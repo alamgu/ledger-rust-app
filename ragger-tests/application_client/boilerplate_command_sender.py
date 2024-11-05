@@ -71,7 +71,7 @@ class BoilerplateCommandSender:
                             ins=InsType.GET_VERSION,
                             p1=P1.P1_START,
                             p2=P2.P2_LAST,
-                            payload=b"")
+                            payload=[b""])
         print(response)
         major, minor, patch = unpack("BBB", response[:3])
         return ((major, minor, patch), response[3:].decode("ascii"))
@@ -88,7 +88,7 @@ class BoilerplateCommandSender:
                                 ins=ins,
                                 p1=P1.P1_START,
                                 p2=P2.P2_LAST,
-                                payload=pack_derivation_path(path))
+                                payload=[pack_derivation_path(path)])
         response, pub_key_len, pub_key = pop_size_prefixed_buf_from_buf(response)
         response, chain_code_len, chain_code = pop_size_prefixed_buf_from_buf(response)
         return pub_key_len, pub_key, chain_code_len, chain_code
