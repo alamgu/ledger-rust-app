@@ -11,7 +11,7 @@ from utils import ROOT_SCREENSHOT_PATH, check_signature_validity
 
 def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
     # Use the app interface instead of raw interface
-    client = BoilerplateCommandSender(backend)
+    client = BoilerplateCommandSender(backend, use_block_protocol=True)
     # The path used for this entire test
     path = "m/44'/535348'/0'"
 
@@ -48,7 +48,7 @@ def test_sign_tx_short_tx(backend, scenario_navigator, firmware, navigator):
 
 def test_sign_tx_long_tx(backend, scenario_navigator, firmware, navigator):
     # Use the app interface instead of raw interface
-    client = BoilerplateCommandSender(backend)
+    client = BoilerplateCommandSender(backend, use_block_protocol=True)
     path = "m/44'/535348'/0'"
 
     toggle_blind_sign(navigator)
@@ -87,7 +87,7 @@ def test_sign_tx_long_tx(backend, scenario_navigator, firmware, navigator):
 def test_sign_tx_refused(backend, scenario_navigator, firmware, navigator):
     pytest.skip()
     # Use the app interface instead of raw interface
-    client = BoilerplateCommandSender(backend)
+    client = BoilerplateCommandSender(backend, use_block_protocol=True)
     path = "m/44'/535348'/0'"
 
     transaction=("looongtx" * 100).encode('utf-8')

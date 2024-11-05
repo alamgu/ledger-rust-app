@@ -14,7 +14,7 @@ from utils import ROOT_SCREENSHOT_PATH
 # In this test we check that the GET_PUBLIC_KEY works in non-confirmation mode
 def test_get_public_key_no_confirm(backend):
     for path in [ "m/44'/535348'/0'"]:
-        client = BoilerplateCommandSender(backend)
+        client = BoilerplateCommandSender(backend, use_block_protocol=True)
         _, public_key, _, _ = client.get_public_key(path=path)
 
         assert public_key.hex() == "19e2fea57e82293b4fee8120d934f0c5a4907198f8df29e9a153cfd7d9383488"
@@ -22,7 +22,7 @@ def test_get_public_key_no_confirm(backend):
 
 # In this test we check that the GET_PUBLIC_KEY works in confirmation mode
 def test_get_public_key_confirm_accepted(backend, scenario_navigator, firmware, navigator):
-    client = BoilerplateCommandSender(backend)
+    client = BoilerplateCommandSender(backend, use_block_protocol=True)
     path = "m/44'/535348'/0'"
 
     def nav_task():
