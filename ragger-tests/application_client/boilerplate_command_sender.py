@@ -56,9 +56,12 @@ def split_message(message: bytes, max_size: int) -> List[bytes]:
 
 
 class BoilerplateCommandSender:
-    def __init__(self, backend: BackendInterface) -> None:
+    def __init__(self, backend: BackendInterface, use_block_protocol: bool=False) -> None:
         self.backend = backend
-        self.send_fn = self.send_chunks
+        if use_block_protocol:
+            self.send_fn = self.send_with_blocks
+        else:
+            self.send_fn = self.send_chunks
 
     def set_use_block_protocol(self, v):
         if v:
