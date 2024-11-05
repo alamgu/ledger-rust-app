@@ -183,5 +183,7 @@ pip install -r ragger-tests/requirements.txt
 
 ```shell
 pytest tests/ --tb=short -v --device {nanosp | nanox | stax | flex}
+cd rust-app; cargo ledger build nanosplus ; cd ..
 pytest ragger-tests/ --tb=short -v --device nanosp
+pytest ragger-tests/test_pubkey_cmd.py --tb=short -v --device nanosp --capture=tee-sys --golden_run
 ```
